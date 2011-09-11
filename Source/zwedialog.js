@@ -24,7 +24,13 @@ var ZweDialog = new Class({
         showTransition: Fx.Transitions.Back.easeOut,
 
         closeDuration: 200,
-        closeTransition: Fx.Transitions.Sine.easeOut
+        closeTransition: Fx.Transitions.Sine.easeOut,
+
+        scrollDuration: 400,
+        scrollTransition: Fx.Transitions.Back.easeOut/*,
+
+        onOpen: function(){},
+        onClose: function(){}*/
     },
 
     elements: {
@@ -37,12 +43,15 @@ var ZweDialog = new Class({
 
     animations: {
         show: {},
-        close: {}
+        close: {},
+        scroll: {}
     },
 
     html: '',
     buttons: [],
     mode: '',
+
+    visible: false,
 
     initialize: function(options)
     {
@@ -51,6 +60,7 @@ var ZweDialog = new Class({
         this._createOverlay();
         this._createElements();
         this._createAnimations();
+        this._addEvents();
 
         this._changeMode();
         this._populateHtml();
@@ -90,8 +100,20 @@ var ZweDialog = new Class({
             close: new Fx.Morph(this.elements.box, {
                 duration: this.options.closeDuration,
                 transition: this.options.closeTransition
+            }),
+            scroll: new Fx.Morph(this.elements.box, {
+                duration: this.options.scrollDuration,
+                transition: this.options.scrollTransition
             })
         };
+    }.protect(),
+
+    _addEvents: function()
+    {
+        window.addEvents({
+            scroll: this._reset.bind(this),
+            resize: this._reset.bind(this)
+        });
     }.protect(),
 
     _changeMode: function(mode)
@@ -122,27 +144,55 @@ var ZweDialog = new Class({
 
     _reset: function()
     {
-        var size = this.elements.box.getSize();
+        var size = this.elements.box.getSize(),
+            windowSize = window.getSize(),
+            windowScroll = window.getScroll();
 
-        this.elements.box.setStyles({
-            opacity: 0,
-
-
-        });
-    },
+        if(this.visible)
+        {
+            this.animations.scroll.start({
+                top: windowScroll.y + (windowSize.x / 2) - 10 - (size.y / 2),
+                left: windowScroll.x + (windowSize.x / 2) - 10 - (size.x / 2)
+            })
+        }
+        else
+        {
+            this.elements.box.setStyles({
+                opacity: 0,
+                top: windowScroll.y - size.y - 20,
+                left: windowScroll.x + (windowSize.x / 2) - 10 - (size.x / 2)
+            });
+        }
+    }.protect(),
 
     show: function()
     {
-        this._reset();
+        var size = this.elements.box.getSize(),
+            windowSize = window.getSize(),
+            windowScroll = window.getScroll();
 
-        this.elements.overlay.show();
+        this._reset();
+        this.fireEvent('open');
+
+        this.visible = true;
+        this.elements.overlay.open();
         this.animations.show.start({
-            opacity: 1
+            opacity: 1,
+            top: windowScroll.y + (windowSize.x / 2) - 10 - (size.y / 2)
         });
     },
 
     close: function()
     {
+        var position = this.elements.box.getPosition();
 
+        this.fireEvent('close');
+
+        this.visible = false;
+        this.elements.overlay.close();
+        this.animations.close.start({
+            opacity: 0,
+            top: position.y - 50
+        });
     }
 });
