@@ -196,3 +196,24 @@ var ZweDialog = new Class({
         });
     }
 });
+
+ZweDialog.Alert = new Class({
+    Extends: ZweDialog,
+
+    initialize: function(message, options)
+    {
+        this.html = message;
+        this.buttons = new Element('input', {
+            type: 'button',
+            value: 'Ok',
+
+            events: {
+                click: function(){
+                    this.close();
+                }
+            }
+        });
+
+        this.parent(options);
+    }
+});
